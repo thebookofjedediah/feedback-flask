@@ -13,14 +13,36 @@
     <!-- Bootstrap here -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
 </head>
-<body>
 
+<nav class="navbar navbar-light bg-primary">
+    <div class="container">
+        <a href="/" class="navbar-brand text-light">Feedback</a>
+        <ul class="nav navbar-nav flex-row float-right">
+            {% if session['username'] %}
+            <li class="nav-item">
+                <a href="/logout" class="nav-link pr-3 text-light">Logout</a>
+            </li>
+            {% else %}
+            <li class="nav-item">
+                <a href="/login" class="nav-link pr-3 text-light">Login</a>
+            </li>
+            <li class="nav-item">
+                <a href="/register" class="nav-link pr-3 text-light">Register</a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+
+<body>
     <!-- Flashing messages at the top of the body -->
     {% for msg in get_flashed_messages() %}
-        <p>{{msg}}</p>
+        <div class="alert alert-warning">{{ msg }}</div>
     {% endfor %}
-
     <!-- Content area for other template -->
-    {% block content %} {% endblock %}
+    <section class="container">
+        {% block content %} {% endblock %}
+    </section>
+    
 </body>
 </html>
