@@ -1,7 +1,7 @@
 from flask import Flask, render_template, redirect, flash, session
 from flask_debugtoolbar import DebugToolbarExtension
-from models import db, connect_db, User
-from forms import UserRegistrationForm, UserLoginForm
+from models import db, connect_db, User, Feedback
+from forms import UserRegistrationForm, UserLoginForm, FeedbackForm
 
 app = Flask(__name__)
 # ADD YOUR DB HERE 
@@ -19,7 +19,8 @@ connect_db(app)
 @app.route('/')
 def get_home():
     """Home Page"""
-    return render_template('home.html')
+    feedbacks = Feedback.query.all()
+    return render_template('home.html', feedbacks=feedbacks)
 
 # USER REGISTRATION
 # To Do ***************************
@@ -38,11 +39,12 @@ def register_user():
         db.session.add(new_user)
         db.session.commit()
         session['username'] = new_user.username
-        flash(f"Welcome {first_name}, we successfully created your account!")
-        return redirect('/secret')
+        flash(f"Welcome {first_name}, we successfully created your account!", "success")
+        return redirect(f'/users/{new_user.username}')
     else:
         return render_template('register.html', form=form)
 
+# LOG IN AS USER
 @app.route('/login', methods=['GET', 'POST'])
 def user_login():
     form = UserLoginForm()
@@ -53,9 +55,9 @@ def user_login():
 
         user = User.authenticate(username, password)
         if user:
-            flash(f"Welcome back, {user.username}")
+            flash(f"Welcome back, {user.username}", "success")
             session['username'] = user.username
-            return redirect('/secret')
+            return redirect(f'/users/{user.username}')
         else:
             form.username.errors = ['Invalid username/password']
 
@@ -65,14 +67,80 @@ def user_login():
 @app.route('/logout')
 def logout_user():
     session.pop('username')
-    flash("Unsafely logged out")
+    flash("Unsafely logged out", "warning")
     return redirect('/')
 
-# SECRET PAGE
-@app.route('/secret')
-def get_secret():
-    if "username" not in session:
-        flash("Please login first!")
+# USER DETAILS PAGE
+@app.route('/users/<username>')
+def get_user_information(username):
+    if "username" not in session or username != session['username']:
+        flash("You are not authorized to view that page", "danger")
+        return redirect('/')
+    user = User.query.get(username)
+    return render_template('user_details.html', user=user)
+
+# ADD FEEDBACK FORM
+@app.route('/users/<username>/feedback/add', methods=['GET', 'POST'])
+def add_feedback(username):
+    form = FeedbackForm()
+
+    if "username" not in session or username != session['username']:
+        flash("You are not authorized to view that page", "danger")
         return redirect('/')
     
-    return render_template('secret.html')
+    if form.validate_on_submit():
+        title = form.title.data
+        content = form.content.data
+
+        new_feedback = Feedback(title=title, content=content, username=username)
+        db.session.add(new_feedback)
+        db.session.commit()
+        flash("New Feedback Added", "success")
+        return redirect(f"/users/{username}")
+
+    user = User.query.get(username)
+    return render_template('add_feedback.html', user=user, form=form)
+
+# FEEDBACK DETAILS
+@app.route('/feedback/<int:id>')
+def get_feedback_details(id):
+    feedback = Feedback.query.get_or_404(id)
+
+    return render_template('feedback_details.html', feedback=feedback)
+
+# EDIT FEEDBACK
+@app.route('/feedback/<int:id>/update', methods=["GET", "POST"])
+def feedback_edit(id):
+    feedback = Feedback.query.get_or_404(id)
+    form = FeedbackForm(obj=feedback)
+    if "username" not in session:
+        flash("please login first", "warning")
+        return redirect('/login')
+    
+    if feedback.username != session["username"]:
+        flash("That is not your post", "danger")
+        return redirect('/')
+
+    if form.validate_on_submit():
+        feedback.title = form.title.data
+        feedback.content = form.content.data
+        db.session.commit()
+        return redirect(f"/users/{feedback.username}")
+    
+    return render_template('edit_feedback.html', form=form, feedback=feedback, username=session["username"])
+
+# DELETE FEEDBACK
+@app.route('/feedback/<int:id>/delete', methods=['POST'])
+def delete_feedback(id):
+    """Delete the feedback"""
+    if "username" not in session:
+        flash("please login first", "warning")
+        return redirect('/login')
+    feedback = Feedback.query.get_or_404(id)
+    if feedback.username == session["username"]:
+        db.session.delete(feedback)
+        db.session.commit()
+        flash("DELETED", "success")
+        return redirect(f"/users/{feedback.username}")
+    flash("You don't have permission to delete that", "danger")
+    return redirect('/')

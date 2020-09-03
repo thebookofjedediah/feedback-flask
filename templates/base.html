@@ -36,8 +36,8 @@
 
 <body>
     <!-- Flashing messages at the top of the body -->
-    {% for msg in get_flashed_messages() %}
-        <div class="alert alert-warning">{{ msg }}</div>
+    {% for category, msg in get_flashed_messages(with_categories=True) %}
+        <div class="alert alert-{{category}}">{{ msg }}</div>
     {% endfor %}
     <!-- Content area for other template -->
     <section class="container">

@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %} Secret {% endblock %}
+{% block content %}
+<h1>Information for, {{feedback.title}}</h1>
+<h3>Title: {{feedback.title}}</h3>
+<h3>Content: {{feedback.content}}</h3>
+<h4>Author: {{feedback.username}}</h4>
+
+{% endblock %}
