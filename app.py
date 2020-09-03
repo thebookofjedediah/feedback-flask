@@ -3,13 +3,14 @@ from flask_debugtoolbar import DebugToolbarExtension
 from models import db, connect_db, User, Feedback
 from forms import UserRegistrationForm, UserLoginForm, FeedbackForm
 from sqlalchemy.exc import IntegrityError
+import os
 
 app = Flask(__name__)
 # ADD YOUR DB HERE 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///feedback'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
-app.config["SECRET_KEY"] = "hihihi333"
+app.config["SECRET_KEY"] = os.environ.get('SECRET_KEY', "mysecret1")
 # Redirects are not blocked here - set this next line to True or delet it in order to enable them
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 debug = DebugToolbarExtension(app)
